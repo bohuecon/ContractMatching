@@ -1,4 +1,4 @@
-para = @with_kw (
+model_para = @with_kw (
     ## set up of agent types
     ai = 1.927, # parameters in investor distribution
     bi = 3.602,
@@ -54,5 +54,18 @@ para = @with_kw (
     ## vectors of contract terms used in computation
     mat_g = gen_matg(vec_i, vec_e, g, ρ),
 )
+
+
+function est_para2deep_para(est_para)
+
+    λi, λe, γi, γe, ai, bi, ae, be, ρ, β1, β2, β3, β4, β5, γ1, γ3, γ4, γ5, κ0, κ1 = est_para
+
+    vec_β = [β3, β4, β5]
+    vec_γ = [γ3, γ4, γ5]
+
+    deep_para = model_para(λi = λi, λe = λe, γi = γi, γe = γe, ai = ai, bi = bi, ae = ae, be = be, ρ = ρ, β1 = β1, β2 = β2, vec_β = vec_β, γ1 = γ1, vec_γ = vec_γ, κ0 = κ0, κ1 = κ1)
+
+    return deep_para
+end 
 
 

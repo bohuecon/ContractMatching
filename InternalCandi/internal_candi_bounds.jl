@@ -42,7 +42,7 @@ function cLowerBoundGen(π_ss, cGrids)
 end
 
 
-function cBoundsFunc(; para = para_de, sol_uc = sol_uc_de, grid_length = 200)
+function cBoundsFunc(; para = para_de, sol_uc = sol_uc_de, grid_length = 8000)
 
     @unpack num_dcases, vec_dummies, vec_dummies, β1, β2, vec_β, γ1, vec_γ, πi, πe = para
     @unpack vec_ci, vec_ce = sol_uc

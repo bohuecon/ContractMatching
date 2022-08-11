@@ -15,11 +15,11 @@ function solve_main(; para = para_de, diagnosis = false, save_results = false)
     ini_mat_Ve = zeros(num_e, num_i)
     # ini_mat_Ve = repeat(ini_vec_Ve, 1, num_i)
 
-    sol, error_flag = solve_model(ini_vec_Vi, ini_vec_Ve, ini_mat_Ve, bounds = bounds, para = para, sol_uc = sol_uc, max_iter = 2000, diagnosis = diagnosis)
+    sol, error_flag = solve_model(ini_vec_Vi, ini_vec_Ve, ini_mat_Ve, bounds = bounds, para = para, sol_uc = sol_uc, max_iter = 10000, diagnosis = diagnosis)
 
-    # if save_results
-    #     save("internal_candi.jld", "vec_Vi", sol.vec_Vi, "vec_Ve", sol.vec_Ve, "mat_Ve", sol.mat_Ve, "mat_Mu", sol.mat_Mu, "mat_cStar", sol.mat_cStar, "mat_dummiesStar", sol.mat_dummiesStar, "arr_Mu", sol.arr_Mu, "arr_cStar", sol.arr_cStar, "arr_dummiesStar", sol.arr_dummiesStar)
-    # end
+    if save_results
+        save("internal_candi.jld", "vec_Vi", sol.vec_Vi, "vec_Ve", sol.vec_Ve, "mat_Ve", sol.mat_Ve, "mat_Mu", sol.mat_Mu, "mat_cStar", sol.mat_cStar, "mat_dummiesStar", sol.mat_dummiesStar, "arr_Mu", sol.arr_Mu, "arr_cStar", sol.arr_cStar, "arr_dummiesStar", sol.arr_dummiesStar)
+    end
 
     return sol, error_flag
 end
@@ -40,14 +40,13 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
     vec_TVi = copy(vec_Vi)
 
     # initialize iterations
-    # print_skip = 50
+    print_skip = 50
     iterate_count = 0
     err = err_tol + 1.0
-    diff_err = diff_err_tol + 1.0
+    # diff_err = diff_err_tol + 1.0
 
-    # while (iterate_count < max_iter) && (err > err_tol)
-
-    while (iterate_count < max_iter) && (err > err_tol) && (diff_err > diff_err_tol)
+    while (iterate_count < max_iter) && (err > err_tol)
+    # while (iterate_count < max_iter) && (err > err_tol) && (diff_err > diff_err_tol)
 
         # PREPARE THE VALUES OF CONTRACTS
 
@@ -59,7 +58,7 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
         # mat_Πi default is to have Vi 
         # Vi is a vector, each is current search value of i
         # to update if (i, e) can form a match (e' value exclude internal search)
-        mat_Πi .= vec_Vi
+        mat_Πi .= vec_Vi 
 
         # mat_Πe default is to have Ve
         # Ve is a vector, each is current search value of e
@@ -78,20 +77,16 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
         # the outputs are updated arr_Πi, arr_Πe
 
         # arr_Πi default is to have mat_Πi or vec_Vi
-        # to update if (e, iota) can form a match, so e's internal search has a value
-        # then e's reservation value is higher, optimal contract may change
-        # mat_ΠiNew = mat_Πi .* mat_Mu + repeat(vec_Vi, 1, num_e) .* (1 .- mat_Mu)
-        # arr_Πi = repeat(mat_ΠiNew, 1, 1, num_i)
-        arr_Πi = repeat(mat_Πi, 1, 1, num_i)
+        # here we take the internal match value as the default value
+        arr_Πi = repeat(mat_Πi, 1, 1, num_i);
 
         # arr_Πe default is to have mat_Πe or mat_Ve
-        # to update if (e, iota) can form a match, so e's internal search has a value
-        # then e's reservation value is higher, optimall contract may change
+        # here we take the internal match value as the default value
+        # is this internal value higher than e's search value for sure?
+        # no, if e's search value is higher because of iota, then arr_Πe might be smaller than e's search value
+        # is it possible indmin(arr_Πe .- mat_Πe) < 0.0?
 
-        # reshape(mat_Ve, 
-        # arr_Ve = repeat()
-        # mat_ΠeNew = mat_Πe .* mat_Mu + transpose(mat_Ve) .* (1 .-mat_Mu)
-        arr_Πe = repeat(mat_Πe, 1, 1, num_i)
+        arr_Πe = repeat(mat_Πe, 1, 1, num_i);
         
         # update arr_Πi and arr_Πe by computing c(i,e,\iota)
         # search value for (e, \iota) comes from mat_Ve
@@ -115,7 +110,8 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
         # size(mat_TVe_ex) # num_e x num_i
         # internal meeting is equivalent to e meet iota and e has no internal search opportunities
         mat_TVe_in = transpose(mat_Πe)
-        mat_TVe = (λe) / (r + λe + γe) * mat_TVe_ex  + (γe) / (r + λe + γe) * mat_TVe_in
+        mat_TVe_middle = (λe) / (r + λe + γe) * mat_TVe_ex  + (γe) / (r + λe + γe) * mat_TVe_in
+        mat_TVe = max.(mat_TVe_middle, repeat(vec_TVe, 1, num_i))
 
         # iteratation procedure
 
@@ -124,21 +120,22 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
         TV = vcat(vec_TVe, reshape(mat_TVe, :, 1), vec_TVi)
 
         # save the previous err to old_err
-        old_err = err
+        # old_err = err
 
         # calculate the new err as err
         err = Base.maximum(abs, TV - V)
 
         # calculate the difference
-        diff_err = abs(err - old_err)
+        # diff_err = abs(err - old_err)
+        # diff_err = 1.0
 
         # V = vcat(vec_Ve, vec_Vi)
         # TV = vcat(vec_TVe, vec_TVi)
         # err = Base.maximum(abs, TV - V)
 
-        # if (iterate_count % print_skip == 0) && diagnosis
-        #     println("       >>> compute iterate $iterate_count with error $err ...")
-        # end
+        if (iterate_count % print_skip == 0) && diagnosis
+            println("       >>> compute iterate $iterate_count with error $err ...")
+        end
 
         vec_TVi, vec_Vi = vec_Vi, vec_TVi
         vec_TVe, vec_Ve = vec_Ve, vec_TVe
@@ -167,7 +164,8 @@ function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de,
 
     not_convergent = false
 
-    if diff_err < diff_err_tol
+    if iterate_count >= max_iter
+    # if (diff_err < diff_err_tol) || (iterate_count >= max_iter)
         not_convergent = true
     end 
 

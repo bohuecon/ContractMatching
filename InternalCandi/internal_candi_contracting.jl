@@ -102,6 +102,8 @@ function contract(ii, ei, vi_val, ve_val; sol_uc = sol_uc_de, para = para_de, bo
     πei_star_uc = πe_s(ci_star_uc, di_star_uc)
     πee_star_uc = πe_s(ce_star_uc, de_star_uc)
 
+    # vi_val =  sol.vec_Vi[ii]; ve_val = sol.vec_Ve[ei] 
+
     if πii_star_uc > vi_val && πee_star_uc > ve_val
         # only so, a match is possible; if not, no match is formed, there is no need to update value functions   
        
@@ -127,6 +129,8 @@ function contract(ii, ei, vi_val, ve_val; sol_uc = sol_uc_de, para = para_de, bo
             for dummies_ind in eachindex(vec_dummies)
 
                 # for each dummies, obtain the constriained optimal c1_star, πi_star, πe_star, exist or not
+
+                # dummies_ind = 2
 
                 ci_lower = bounds.vec_ciLowerBounds[dummies_ind](vi_val_adjusted)
                 ci_upper = bounds.vec_ciUpperBounds[dummies_ind](vi_val_adjusted)
@@ -252,7 +256,7 @@ end
 function contract_c(dummies_ind::Int, vi_val::Float64, ve_val::Float64, πi_s::Function, πe_s::Function, ci_lower::Float64, ci_upper::Float64, ce_lower::Float64, ce_upper::Float64, sol_uc::NamedTuple, para::NamedTuple)
 
     @unpack vec_dummies = para
-    @unpack vec_ci, vec_ce = sol_uc
+    @unpack vec_ci, vec_ce, vec_πi, vec_πe = sol_uc
 
     dummies = vec_dummies[dummies_ind]
     πi_ss(c) = πi_s(c, dummies)
@@ -261,12 +265,37 @@ function contract_c(dummies_ind::Int, vi_val::Float64, ve_val::Float64, πi_s::F
     c_lower = max(ci_lower, ce_lower)
     c_upper = min(ci_upper, ce_upper)
 
+    c_uc = vec_ci[dummies_ind]
+
     if c_lower < c_upper
         flag = 1
-        result = optimize(c -> - πi_ss(c), c_lower, c_upper)
-        c_star = result.minimizer
-        πi_star = -result.minimum
-        πe_star = πe_ss(c_star)
+        if (c_uc < c_upper) && (c_uc > c_lower)
+            c_star = c_uc
+            πi_star = πi_ss(c_star)
+            πe_star = πe_ss(c_star)
+        else
+            # c_uc is not in between
+
+            result = optimize(c -> - πi_ss(c), c_lower, c_upper)
+            c_star = result.minimizer
+            # πi_star = max(-result.minimum, vi_val)
+            πi_star = -result.minimum
+            # πe_star = max(πe_ss(c_star), ve_val)
+            πe_star = πe_ss(c_star)
+            
+            # πi_upper = πi_ss(c_upper)
+            # πi_lower = πi_ss(c_lower)
+            # if πi_upper > πi_lower
+            #     c_star = c_upper
+            #     πi_star = πi_upper
+            #     πe_star = πe_ss(c_upper)
+            # else
+            #     c_star = c_lower
+            #     πi_star = πi_lower
+            #     πe_star = πe_ss(c_lower)
+            # end
+        end
+
     else
         flag = 0
         c_star = 0.0

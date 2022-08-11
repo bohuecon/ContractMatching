@@ -1,124 +1,4 @@
-using Plots
-theme(:default)
-using LaTeXStrings
-using JLD, HDF5
 
-using Parameters
-using Distributions
-using Optim
-using Optim: converged, maximum, maximizer, minimizer, iterations 
-
-using LinearAlgebra
-using Interpolations
-
-include("internal_candi_parameters.jl")
-include("internal_candi_solvemodel.jl")
-include("internal_candi_bounds.jl")
-include("internal_candi_valueupdate.jl")
-include("internal_candi_contracting.jl")
-include("internal_candi_policy.jl")
-include("internal_candi_funcs.jl")
-# include("internal_candi_plots.jl")
-include("internal_candi_moments.jl")
-include("whyholes.jl")
-
-# this one does not converge
-est_para3 = [
-   # λi, λe, γi, γe, ai, bi, ae, be, ρ,
-   7.9669, 6.4285, 11.3733, 19.6905, 4.3613, 5.6546, 4.7125, 9.0024, -0.2923, 
-   # β1, β2, β3, β4, β5, 
-   5.5108, -8.3194, -1.0298, -0.2501, 1.4096, 
-   # γ1, γ3, γ4, γ5, κ0, κ1
-   4.0561, 13.9467, 1.5728, -19.5414, -239.0179, 7.2275]
-
-
-est_para3 = [
-   # λi, λe, γi, γe, ai, bi, ae, be, ρ,
-   7.9669, 6.4285, 11.3733, 19.6905, 4.3613, 5.6546, 4.7125, 9.0024, -0.2923, 
-   # β1, β2, β3, β4, β5, 
-   5.5108, -8.3194, -1.0298, -0.2501, 1.4096, 
-   # γ1, γ3, γ4, γ5, κ0, κ1
-   4.0561, -0.1, -0.1, -0.1, -239.0179, 7.2275]
-
-para = est_para2deep_para(est_para3)
-i_quasiconcave, e_quasiconcave = quasiconcave_objects(para)
-sol, not_convergent = solve_main(para = para, diagnosis = true)
-
-whyholes(29, 48, sol, para)
-ii = 29
-ei = 48
-
-@unpack vec_Vi, vec_Ve, mat_Ve = sol
-
-
-############################################
-############################################
-
-
-function whyholes(ii, ei, sol, deep_para)
-
-   # ii = 29
-   # ei = 48 #31-35 (32-34 are zeros)
-
-   # sol.mat_Mu[ii, ei]
-   # sol.mat_dummiesStar[ii, ei]
-   # sol.mat_cStar[ii, ei]
-
-   i_val = deep_para.vec_i[ii]
-   e_val = deep_para.vec_e[ei]
-
-   g_val = deep_para.mat_g[ii, ei]
-
-
-   vi_val = sol.vec_Vi[ii] / g_val
-   ve_val = sol.vec_Ve[ei] / g_val
-
-
-   @unpack vec_dummies, num_dcases, h, ρ, β1, β2, vec_β, γ1, vec_γ = deep_para
-   πi_s(c, dummies) = πi(c, dummies, β1, β2, vec_β, γ1, vec_γ) 
-   πe_s(c, dummies) = πe(c, dummies, β1, β2, vec_β, γ1, vec_γ) 
-
-   πi_ss00(c) = πi_s(c, [0,0,0])
-   πi_ss10(c) = πi_s(c, [1,0,0])
-   πi_ss01(c) = πi_s(c, [0,1,0])
-   πi_ss11(c) = πi_s(c, [1,1,1])
-   πe_ss00(c) = πe_s(c, [0,0,0])
-   πe_ss10(c) = πe_s(c, [1,0,0])
-   πe_ss01(c) = πe_s(c, [0,1,0])
-   πe_ss11(c) = πe_s(c, [1,1,1])
-
-   vec_c = range(0.0, 1.0, length = 200)
-
-   # [:auto, :solid, :dash, :dot, :dashdot, :dashdotdot]
-   plot(vec_c, πi_ss00.(vec_c), label = "πi00", linecolor = :green, linestyle = :solid, legend = :bottomleft, xlabel = "c", ylabel = "πi", title = "e = $ei")
-   plot!(vec_c, πi_ss10.(vec_c), label = "πi10", linecolor = :darkorchid, linestyle = :solid)
-   plot!(vec_c, πi_ss01.(vec_c), label = "πi01", linecolor = :deepskyblue, linestyle = :solid)
-   plot!(vec_c, πi_ss11.(vec_c), label = "πi11", linecolor = :deeppink, linestyle = :solid)
-   plot!(vec_c, vec_c -> vi_val, label = "vi_val", linecolor = :red, linestyle = :dashdot)
-
-   p = twinx()
-
-   plot!(p, vec_c, πe_ss00.(vec_c), label = "πe00", linecolor = :green, linestyle = :solid, legend = :bottomright, ylabel = "πe")
-   plot!(p, vec_c, πe_ss10.(vec_c), label = "πe10", linecolor = :darkorchid, linestyle = :solid)
-   plot!(p, vec_c, πe_ss01.(vec_c), label = "πe01", linecolor = :deepskyblue, linestyle = :solid)
-   plot!(p, vec_c, πe_ss11.(vec_c), label = "πe11", linecolor = :deeppink, linestyle = :solid)
-   plot!(p, vec_c, vec_c -> ve_val, label = "ve_val", linecolor = :indianred, linestyle = :dot)
-
-   filename = "./figures/decision_e" * "$ei" * ".pdf"
-
-   Plots.savefig(filename)
-end
-
-whyholes(7, 31, sol, deep_para)
-whyholes(7, 32, sol, deep_para)
-whyholes(7, 36, sol, deep_para)
-
-
-
-
-############################################
-############################################
-############################################
 
 include("./InternalCandi/InternalCandi.jl")
 
@@ -137,15 +17,15 @@ est_para1 = [
    3.9576, -6.0942, 0.3479, -0.8109, -0.4704, 
    # γ1, γ3, γ4, γ5, κ0, κ1
    1.2006, -3.4716, 4.2472, -5.869, -147.622, 43.5689]
-
+  
 # this does not converge
 est_para2 = [
    # λi, λe, γi, γe, ai, bi, ae, be, ρ,
-   7.9669, 6.4285, 11.3733, 19.6905, 4.3613, 5.6546, 4.7125, 9.0024, -0.2923, 
+   9.4296, 18.9393, 11.3269, 6.1316, 11.9854, 5.6745, 2.2153, 9.1023, -0.2972,
    # β1, β2, β3, β4, β5, 
-   5.5108, -8.3194, -1.0298, -0.2501, 1.4096, 
+   1.0179, -2.6548, 2.0213, 8.7191, 19.1175, 
    # γ1, γ3, γ4, γ5, κ0, κ1
-   4.0561, 13.9467, 1.5728, -19.5414, -239.0179, 7.2275]
+   -13.1968, 20.9055, -5.5865, 15.6568, -150.0711, 42.0857]
 
 modelMoment1, error_flag1, not_convergent1 = InternalCandi.genMoments(est_para = est_para1, diagnosis = true)
 modelMoment2, error_flag2, not_convergent2 = InternalCandi.genMoments(est_para = est_para2, diagnosis = true)
@@ -496,12 +376,19 @@ include("internal_candi_funcs.jl")
 include("internal_candi_plots.jl")
 include("internal_candi_moments.jl")
 
-est_para_initial = [7.98398, 9.94985, 11.5009, 6.76383, 6.13025, 8.80139, 6.48018, 8.41869, -1.1507, 2.68856, -4.26221, 0.428072, -0.306312, -0.285261, 3.64172, -3.75063, 2.92743, 2.29239, -177.283, 8.64983]
-deep_para = est_para2deep_para(est_para_initial)
-i_quasiconcave, e_quasiconcave = quasiconcave_objects(deep_para)
+# this one does not converge
+est_para3 = [
+   # λi, λe, γi, γe, ai, bi, ae, be, ρ,
+   7.9669, 6.4285, 11.3733, 19.6905, 4.3613, 5.6546, 4.7125, 9.0024, -0.2923, 
+   # β1, β2, β3, β4, β5, 
+   5.5108, -8.3194, -1.0298, -0.2501, 1.4096, 
+   # γ1, γ3, γ4, γ5, κ0, κ1
+   4.0561, 13.9467, 1.5728, -19.5414, -239.0179, 7.2275]
 
-sol, not_convergent = solve_main(para = deep_para, diagnosis = true, save_results = true)
-plot_equ(;para = deep_para)
+
+para3 = est_para2deep_para(est_para3)
+i_quasiconcave, e_quasiconcave = quasiconcave_objects(para3)
+sol, not_convergent = solve_main(para = para3, diagnosis = true)
 
 
 function whyholes(ii, ei, sol, deep_para)

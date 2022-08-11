@@ -25,7 +25,8 @@ function score(est_para::Vector, dataMoment::Vector, WeightMatrix::Matrix; diagn
 			thescore = (dataMoment .- modelMoment)' * WeightMatrix * (dataMoment .- modelMoment)
 		end
 
-		if thescore < 100000.0
+		# if thescore < 100000.0
+		if not_convergent
 
 			open("estimation_log.csv", "a") do f
 			     # write(f, "ee, rho_z, mean_z, var_z, mean_logdelta, mean_logwage, mean_logsize, beta_wagesize, beta_deltasize, beta_deltawage, valid_fraction, lambda1_val, lambda1, z_rho, zw_mean, z_std, s_mean, s_std, c, sigma, score \n")
@@ -200,35 +201,35 @@ function StructEst(;
 		ThetaStar = res.archive_output.best_candidate
 		println("------------------------------------ \n")
 
-	println("4. Inference \n")
-	println("------------------------------------ \n")
+	# println("4. Inference \n")
+	# println("------------------------------------ \n")
 
-	println("\n 4.1 Compare Model and Data Moments \n")
-	println("------------------------------------ \n")
+	# println("\n 4.1 Compare Model and Data Moments \n")
+	# println("------------------------------------ \n")
 
-	# ThetaStar = est_para_initial;
+	# # ThetaStar = est_para_initial;
 
-	modelMomentThetaStar, error_flag = InternalCandi.genMoments(est_para = ThetaStar);
-	stdErr = diag(CovDataMoment).^0.5;
-	tStat = (modelMomentThetaStar - dataMoment) ./ stdErr;
-	dfMoment = DataFrame(Moments = momentName,  Data = dataMoment, Model = modelMomentThetaStar, tStat = tStat);
-	show(dfMoment, allcols = true)
-	println()
+	# modelMomentThetaStar, error_flag = InternalCandi.genMoments(est_para = ThetaStar);
+	# stdErr = diag(CovDataMoment).^0.5;
+	# tStat = (modelMomentThetaStar - dataMoment) ./ stdErr;
+	# dfMoment = DataFrame(Moments = momentName,  Data = dataMoment, Model = modelMomentThetaStar, tStat = tStat);
+	# show(dfMoment, allcols = true)
+	# println()
 
 
-	println("\n 4.2 Gradient and Local Identification \n")
-	println("------------------------------------ \n")
+	# println("\n 4.2 Gradient and Local Identification \n")
+	# println("------------------------------------ \n")
 
-	mGrad = getgradient(ThetaStar, dataMoment)
-	println("d m_star / d ParamsEst =")
-	dfGrad = DataFrame(mGrad, :auto)
-	show(dfGrad)
-	println("\n \n")
-	println("Check for local identification: Does gradient have full rank? \n")
-	# it means it should have a rank of the parameters to be estimated.
-	println("Rank of d m_star / d Params = ", string(rank(mGrad)) )
-	println("Condition number of d m_star / d Params = ", string(cond(mGrad)) )
-	println()
+	# mGrad = getgradient(ThetaStar, dataMoment)
+	# println("d m_star / d ParamsEst =")
+	# dfGrad = DataFrame(mGrad, :auto)
+	# show(dfGrad)
+	# println("\n \n")
+	# println("Check for local identification: Does gradient have full rank? \n")
+	# # it means it should have a rank of the parameters to be estimated.
+	# println("Rank of d m_star / d Params = ", string(rank(mGrad)) )
+	# println("Condition number of d m_star / d Params = ", string(cond(mGrad)) )
+	# println()
 
 	# println("\n 4.3 Estimates and Standard errors \n")
 	# println("------------------------------------ \n")
@@ -243,14 +244,14 @@ function StructEst(;
 
 	# CovarEst = XXX * WeightMatrix * CovM * WeightMatrix' * XXX'
 
-    CovarEst = inv(mGrad' * WeightMatrix * mGrad)/709
+ #    CovarEst = inv(mGrad' * WeightMatrix * mGrad)/709
 
-	StdErrsEst = diag(CovarEst).^0.5
+	# StdErrsEst = diag(CovarEst).^0.5
 
-	println("Estimated Parameters: \n")
-	dfTheta= DataFrame(parameter = est_para_name, estimates = ThetaStar, StdErr = StdErrsEst, t_val = ThetaStar./StdErrsEst)
-	show(dfTheta)
-	println()
+	# println("Estimated Parameters: \n")
+	# dfTheta= DataFrame(parameter = est_para_name, estimates = ThetaStar, StdErr = StdErrsEst, t_val = ThetaStar./StdErrsEst)
+	# show(dfTheta)
+	# println()
 
 	# # println("\n 4.4 Over-identification test \n")
 	# # println("------------------------------------ \n")
