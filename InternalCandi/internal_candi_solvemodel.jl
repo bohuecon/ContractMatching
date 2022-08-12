@@ -24,20 +24,20 @@ function solve_main(; para = para_de, diagnosis = false, save_results = false)
     return sol, error_flag
 end
 
-function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de, bounds = bounds_de, err_tol = 1e-4, diff_err_tol = 1e-10, max_iter = 2000, diagnosis = false)
+function solve_model(vec_Vi, vec_Ve, mat_Ve; para = para_de, sol_uc = sol_uc_de, bounds = bounds_de, err_tol = 1e-5, diff_err_tol = 1e-10, max_iter = 2000, diagnosis = false)
 
     @unpack r, λi, λe, γi, γe, num_i, num_e, vec_prob_i, vec_prob_e, mat_prob_ie, num_dcases = para
 
     # initialize pair-value arrays
-    mat_Πi = Array{Float64}(undef, num_i, num_e)
-    mat_Πe = Array{Float64}(undef, num_i, num_e)
-    arr_Πi = Array{Float64}(undef, num_i, num_e, num_i)
-    arr_Πe = Array{Float64}(undef, num_i, num_e, num_i) 
+    mat_Πi = Array{Float64}(undef, num_i, num_e);
+    mat_Πe = Array{Float64}(undef, num_i, num_e);
+    arr_Πi = Array{Float64}(undef, num_i, num_e, num_i);
+    arr_Πe = Array{Float64}(undef, num_i, num_e, num_i);
 
     # initialize type-value arrays
-    vec_TVe = copy(vec_Ve)
-    mat_TVe = copy(mat_Ve)
-    vec_TVi = copy(vec_Vi)
+    vec_TVe = copy(vec_Ve);
+    mat_TVe = copy(mat_Ve);
+    vec_TVi = copy(vec_Vi);
 
     # initialize iterations
     print_skip = 50

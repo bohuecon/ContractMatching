@@ -25,8 +25,8 @@ function score(est_para::Vector, dataMoment::Vector, WeightMatrix::Matrix; diagn
 			thescore = (dataMoment .- modelMoment)' * WeightMatrix * (dataMoment .- modelMoment)
 		end
 
-		# if thescore < 100000.0
-		if not_convergent
+		if thescore < 100000.0
+		# if not_convergent
 
 			open("estimation_log.csv", "a") do f
 			     # write(f, "ee, rho_z, mean_z, var_z, mean_logdelta, mean_logwage, mean_logsize, beta_wagesize, beta_deltasize, beta_deltawage, valid_fraction, lambda1_val, lambda1, z_rho, zw_mean, z_std, s_mean, s_std, c, sigma, score \n")
@@ -137,9 +137,26 @@ function StructEst(;
         # est_para_initial = [8.0, 3.2, 8.0*1.2847, 3.2, 1.927, 3.602, 3.142, 4.152, -1.37, 1.5, -1.5/0.68, 0.41, 0.29, -0.001, 0.151, -1.66, -2.12, 0.001, -400.0, 14.5]
         # est_para_initial = [12.923, 10.4798, 18.4656, 10.8253, 5.52592, 7.01597, 6.56913, 0.226888, -1.40314, 1.98749, -6.4091, 2.96237, -1.93548, 0.444441, 2.79386, 3.29856, -1.13019, 1.37469, -56.6772, 3.91465]
         # est_para_initial = [3.65803, 2.72272, 4.94808, 17.0181, 4.11957, 5.3761, 4.04063, 2.58149, -0.547694, 4.59406, -6.87669, 0.290423, -0.793224, -0.240003, 0.479697, -2.84134, 4.54637, 1.99139, -153.041, 3.6081]
-        est_para_initial = [5.54431, 14.9405, 8.01613, 1.35146, 1.16238, 6.70227, 3.12045, 3.46072, -0.526669, 3.95762, -6.09421, 0.347944, -0.810893, -0.470389, 1.20059, -3.47155, 4.24721, -5.86905, -147.622, 43.5689]
+        # est_para_initial = [5.54431, 14.9405, 8.01613, 1.35146, 1.16238, 6.70227, 3.12045, 3.46072, -0.526669, 3.95762, -6.09421, 0.347944, -0.810893, -0.470389, 1.20059, -3.47155, 4.24721, -5.86905, -147.622, 43.5689]
+        # est_para_initial = [5.54431, 14.9405, 8.01613, 1.35146, 1.16238, 6.70227, 3.12045, 3.46072, -0.526669, 3.95762, -6.09421, 0.347944, -0.810893, -0.470389, 1.20059, -3.47155, 4.24721, -5.86905, -147.622, 43.5689]
 
-        score_initial = score(est_para_initial, dataMoment, WeightMatrix, diagnosis = true)
+        est_para_initial = [
+		   # λi, λe, γi, γe, ai, bi, ae, be, ρ,
+		   12.1537, 19.235, 17.6457, 4.24937, 2.93767, 7.94862, 0.35109, 1.16658, -1.65,
+		   # β1, β2, β3, β4, β5, 
+		   0.926411, -1.65875, -0.683358, -0.430263, -0.866575,
+		   # γ1, γ3, γ4, γ5, κ0, κ1
+		   0.855905, 0.57409, -0.289459, -0.884956, -1.24161, 0.241207]
+
+
+        WeightMatrixDiagAdjusted = deepcopy(WeightMatrixDiag)
+        WeightMatrixDiagAdjusted[7, 7]  = WeightMatrixDiagAdjusted[7, 7] * 10
+        WeightMatrixDiagAdjusted[8, 8]  = WeightMatrixDiagAdjusted[8, 8] * 10
+
+
+        # score_initial = score(est_para_initial, dataMoment, WeightMatrix, diagnosis = true)
+        # score_initial = score(est_para_initial, dataMoment, WeightMatrixDiag, diagnosis = true)
+        score_initial = score(est_para_initial, dataMoment, WeightMatrixDiagAdjusted, diagnosis = true)
 
         println("The initial score is $score_initial.")
 		display([est_para_name est_para_initial])
@@ -150,22 +167,22 @@ function StructEst(;
 					(0.10, 20.0),  # λe
 					(0.10, 20.0),  # γi
 					(0.10, 20.0),  # γe
-					(0.10, 15.00),  # ai
-					(0.10, 15.00),  # bi
-					(0.10, 10.00),  # ae
-					(0.10, 10.00),  # be
-					(-2.00, -0.10),  # ρ
-					(0.1, 15.00),  # β1
-					(-10.0, -1.0),  # β2
-					(-25.00, 25.00),  # β3
-					(-25.00, 25.00),  # β4
-					(-25.00, 25.00),  # β5
-					(-25.00, 25.00),  # γ1
-					(-25.00, 25.00),  # γ3
-					(-25.00, 25.00),  # γ4
-					(-25.00, 25.00),  # γ5
-					(-250.0, 100.0),  # κ0
-					(0.01, 80.00)]  # κ1
+					(0.01, 10.0),  # ai
+					(0.01, 10.0),  # bi
+					(0.01, 10.0),  # ae
+					(0.01, 10.0),  # be
+					(-2.0, -0.10),  # ρ
+					(0.0, 1.0),  # β1
+					(-2.0, 0.0),  # β2
+					(-1.0, 1.0),  # β3
+					(-1.0, 1.0),  # β4
+					(-1.0, 1.0),  # β5
+					(0.0, 1.0),  # γ1
+					(-1.0, 1.0),  # γ3
+					(-1.0, 1.0),  # γ4
+					(-1.0, 1.0),  # γ5
+					(-5.0, 0.0),  # κ0
+					(0.001, 1.00)]  # κ1
 
         # set lambda: number of samples to take per iteration, here means each process take 3 samples, could also be 4 or 5
         # if lambda = 0 is set, then it will be set based on the number of dimensions
@@ -201,20 +218,20 @@ function StructEst(;
 		ThetaStar = res.archive_output.best_candidate
 		println("------------------------------------ \n")
 
-	# println("4. Inference \n")
-	# println("------------------------------------ \n")
+	println("4. Inference \n")
+	println("------------------------------------ \n")
 
-	# println("\n 4.1 Compare Model and Data Moments \n")
-	# println("------------------------------------ \n")
+	println("\n 4.1 Compare Model and Data Moments \n")
+	println("------------------------------------ \n")
 
-	# # ThetaStar = est_para_initial;
+	# ThetaStar = est_para_initial;
 
-	# modelMomentThetaStar, error_flag = InternalCandi.genMoments(est_para = ThetaStar);
-	# stdErr = diag(CovDataMoment).^0.5;
-	# tStat = (modelMomentThetaStar - dataMoment) ./ stdErr;
-	# dfMoment = DataFrame(Moments = momentName,  Data = dataMoment, Model = modelMomentThetaStar, tStat = tStat);
-	# show(dfMoment, allcols = true)
-	# println()
+	modelMomentThetaStar, error_flag = InternalCandi.genMoments(est_para = ThetaStar);
+	stdErr = diag(CovDataMoment).^0.5;
+	tStat = (modelMomentThetaStar - dataMoment) ./ stdErr;
+	dfMoment = DataFrame(Moments = momentName,  Data = dataMoment, Model = modelMomentThetaStar, tStat = tStat);
+	show(dfMoment, allcols = true)
+	println()
 
 
 	# println("\n 4.2 Gradient and Local Identification \n")

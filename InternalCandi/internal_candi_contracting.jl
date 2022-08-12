@@ -128,6 +128,8 @@ function contract(ii, ei, vi_val, ve_val; sol_uc = sol_uc_de, para = para_de, bo
 
             for dummies_ind in eachindex(vec_dummies)
 
+                # println("ii = $ii, ei = $ei !")
+
                 # for each dummies, obtain the constriained optimal c1_star, πi_star, πe_star, exist or not
 
                 # dummies_ind = 2
@@ -276,24 +278,24 @@ function contract_c(dummies_ind::Int, vi_val::Float64, ve_val::Float64, πi_s::F
         else
             # c_uc is not in between
 
-            result = optimize(c -> - πi_ss(c), c_lower, c_upper)
-            c_star = result.minimizer
-            # πi_star = max(-result.minimum, vi_val)
-            πi_star = -result.minimum
-            # πe_star = max(πe_ss(c_star), ve_val)
-            πe_star = πe_ss(c_star)
+            # result = optimize(c -> - πi_ss(c), c_lower, c_upper)
+            # c_star = result.minimizer
+            # # πi_star = max(-result.minimum, vi_val)
+            # πi_star = -result.minimum
+            # # πe_star = max(πe_ss(c_star), ve_val)
+            # πe_star = πe_ss(c_star)
             
-            # πi_upper = πi_ss(c_upper)
-            # πi_lower = πi_ss(c_lower)
-            # if πi_upper > πi_lower
-            #     c_star = c_upper
-            #     πi_star = πi_upper
-            #     πe_star = πe_ss(c_upper)
-            # else
-            #     c_star = c_lower
-            #     πi_star = πi_lower
-            #     πe_star = πe_ss(c_lower)
-            # end
+            πi_upper = πi_ss(c_upper)
+            πi_lower = πi_ss(c_lower)
+            if πi_upper > πi_lower
+                c_star = c_upper
+                πi_star = πi_upper
+                πe_star = πe_ss(c_upper)
+            else
+                c_star = c_lower
+                πi_star = πi_lower
+                πe_star = πe_ss(c_lower)
+            end
         end
 
     else
